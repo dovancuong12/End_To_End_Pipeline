@@ -1,2 +1,80 @@
-# This file contains the system configuration for the entire project
-# What to do: Configure connection parameters for Kafka, Postgres, MinIO, Airflow, Spark, Redis, Elasticsearch
+# Configuration file for End-to-End Pipeline
+
+# Database configurations
+database:
+  postgres:
+    host: localhost
+    port: 5432
+    database: pipeline_db
+    username: postgres
+    password: password
+    connection_string: "postgresql://postgres:password@localhost:5432/pipeline_db"
+
+# Storage configurations
+storage:
+  minio:
+    endpoint: "localhost:9000"
+    access_key: "minioadmin"
+    secret_key: "minioadmin"
+    secure: false
+    raw_bucket: "raw-data"
+    processed_bucket: "processed-data"
+    backup_bucket: "backup-data"
+
+# Message queue configuration
+messaging:
+  kafka:
+    bootstrap_servers: ["localhost:9092"]
+    raw_topic: "raw_data_topic"
+    processed_topic: "processed_data_topic"
+    consumer_group: "pipeline_group"
+
+# Processing configurations
+processing:
+  spark:
+    master: "local[*]"
+    app_name: "EndToEndPipeline"
+    executor_memory: "4g"
+    driver_memory: "2g"
+    cores_max: "4"
+
+# Monitoring configurations
+monitoring:
+  elasticsearch:
+    hosts: ["localhost:9200"]
+    index_prefix: "pipeline_data"
+  redis:
+    host: "localhost"
+    port: 6379
+    db: 0
+
+# Data quality configurations
+data_quality:
+  great_expectations:
+    checkpoint_name: "data_validation_checkpoint"
+    expectation_suite_name: "data_expectations"
+
+# Authentication and security
+security:
+  keycloak:
+    server_url: "http://localhost:8080/auth"
+    realm: "pipeline-realm"
+    client_id: "pipeline-client"
+  vault:
+    address: "http://localhost:8200"
+    token: "vault-token"
+
+# API configurations
+api:
+  host: "0.0.0.0"
+  port: 8000
+  debug: true
+
+# Pipeline configurations
+pipeline:
+  batch:
+    schedule_interval: "0 */6 * * *"  # Every 6 hours
+    max_active_runs: 1
+  streaming:
+    batch_duration: 10  # seconds
+    checkpoint_location: "/tmp/checkpoint"
