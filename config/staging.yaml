@@ -1,0 +1,65 @@
+# Kafka Configuration
+kafka:
+  bootstrap_servers: "kafka.staging.example.com:9094"
+  security_protocol: "SSL"
+  ssl_cafile: "/etc/ssl/certs/kafka-ca.pem"
+  ssl_certfile: "/etc/ssl/certs/kafka-client.pem"
+  ssl_keyfile: "/etc/ssl/private/kafka-client.key"
+  topics:
+    raw_data: "staging.raw.data"
+    processed_data: "staging.processed.data"
+    alerts: "staging.alerts"
+  consumer_group: "staging-pipeline"
+
+# PostgreSQL Configuration
+postgres:
+  host: "postgres.staging.example.com"
+  port: 5432
+  database: "pipeline_staging"
+  username: "${DB_USER}"  # From environment variables
+  password: "${DB_PASSWORD}"  # From environment variables
+  sslmode: "require"
+  sslrootcert: "/etc/ssl/certs/postgres-ca.pem"
+
+# MinIO Configuration
+minio:
+  endpoint: "https://minio.staging.example.com"
+  access_key: "${MINIO_ACCESS_KEY}"  # From environment variables
+  secret_key: "${MINIO_SECRET_KEY}"  # From environment variables
+  secure: true
+  buckets:
+    raw: "staging-raw-data"
+    processed: "staging-processed-data"
+    rejects: "staging-rejects"
+
+# Spark Configuration
+spark:
+  master: "spark://spark-master:7077"
+  driver_memory: "4g"
+  executor_memory: "4g"
+  sql_shuffle_partitions: 8
+
+# Airflow Configuration
+airflow:
+  executor: "CeleryExecutor"
+  dags_folder: "/opt/airflow/dags"
+  max_active_runs: 10
+
+# Monitoring
+monitoring:
+  enabled: true
+  prometheus_endpoint: "http://prometheus.staging.example.com:9090"
+  grafana_dashboard_url: "https://grafana.staging.example.com"
+
+# Logging
+logging:
+  level: "INFO"
+  file: "/var/log/pipeline/staging.log"
+  max_size_mb: 200
+  backup_count: 10
+
+# Feature Flags
+features:
+  enable_data_validation: true
+  enable_anomaly_detection: true
+  enable_telemetry: true

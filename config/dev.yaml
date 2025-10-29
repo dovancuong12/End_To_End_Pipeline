@@ -1,0 +1,61 @@
+# Kafka Configuration
+kafka:
+  bootstrap_servers: "kafka:9092"
+  security_protocol: "PLAINTEXT"
+  topics:
+    raw_data: "dev.raw.data"
+    processed_data: "dev.processed.data"
+    alerts: "dev.alerts"
+  consumer_group: "dev-pipeline"
+
+# PostgreSQL Configuration
+postgres:
+  host: "postgres"
+  port: 5432
+  database: "pipeline_dev"
+  username: "dev_user"
+  password: "dev_password"  # In production, use environment variables
+  sslmode: "disable"
+
+# MinIO Configuration
+minio:
+  endpoint: "http://minio:9000"
+  access_key: "minioadmin"
+  secret_key: "minioadmin"  # Change in production
+  secure: false
+  buckets:
+    raw: "dev-raw-data"
+    processed: "dev-processed-data"
+    rejects: "dev-rejects"
+
+# Spark Configuration
+spark:
+  master: "local[*]"
+  driver_memory: "2g"
+  executor_memory: "2g"
+  sql_shuffle_partitions: 4
+
+# Airflow Configuration
+airflow:
+  executor: "LocalExecutor"
+  dags_folder: "/opt/airflow/dags"
+  max_active_runs: 5
+
+# Monitoring
+monitoring:
+  enabled: true
+  prometheus_endpoint: "http://prometheus:9090"
+  grafana_dashboard_url: "http://localhost:3000"
+
+# Logging
+logging:
+  level: "INFO"
+  file: "/var/log/pipeline/dev.log"
+  max_size_mb: 100
+  backup_count: 5
+
+# Feature Flags
+features:
+  enable_data_validation: true
+  enable_anomaly_detection: false
+  enable_telemetry: false

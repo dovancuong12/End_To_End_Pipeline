@@ -1,0 +1,86 @@
+# Kafka Configuration
+kafka:
+  bootstrap_servers: "kafka1.prod.example.com:9094,kafka2.prod.example.com:9094,kafka3.prod.example.com:9094"
+  security_protocol: "SSL"
+  ssl_cafile: "/etc/ssl/certs/kafka-ca.pem"
+  ssl_certfile: "/etc/ssl/certs/kafka-client.pem"
+  ssl_keyfile: "/etc/ssl/private/kafka-client.key"
+  sasl_mechanism: "SCRAM-SHA-512"
+  sasl_jaas_config: "org.apache.kafka.common.security.scram.ScramLoginModule required username=\"${KAFKA_USER}\" password=\"${KAFKA_PASSWORD}\";"
+  topics:
+    raw_data: "prod.raw.data"
+    processed_data: "prod.processed.data"
+    alerts: "prod.alerts"
+  consumer_group: "prod-pipeline"
+
+# PostgreSQL Configuration
+postgres:
+  host: "postgres-ha.prod.example.com"
+  port: 5432
+  database: "pipeline_prod"
+  username: "${DB_USER}"  # From Vault
+  password: "${DB_PASSWORD}"  # From Vault
+  sslmode: "verify-full"
+  sslrootcert: "/etc/ssl/certs/postgres-ca.pem"
+
+# MinIO Configuration
+minio:
+  endpoint: "https://minio.prod.example.com"
+  access_key: "${MINIO_ACCESS_KEY}"  # From Vault
+  secret_key: "${MINIO_SECRET_KEY}"  # From Vault
+  secure: true
+  buckets:
+    raw: "prod-raw-data"
+    processed: "prod-processed-data"
+    rejects: "prod-rejects"
+
+# Spark Configuration
+spark:
+  master: "k8s://https://kubernetes.default.svc"
+  deploy_mode: "cluster"
+  driver_memory: "8g"
+  executor_memory: "8g"
+  executor_instances: 4
+  sql_shuffle_partitions: 32
+  dynamic_allocation: true
+
+# Airflow Configuration
+airflow:
+  executor: "KubernetesExecutor"
+  dags_folder: "/opt/airflow/dags"
+  max_active_runs: 20
+
+# Monitoring
+monitoring:
+  enabled: true
+  prometheus_endpoint: "http://prometheus.prod.example.com:9090"
+  grafana_dashboard_url: "https://grafana.prod.example.com"
+  metrics_namespace: "data_pipeline"
+
+# Logging
+logging:
+  level: "INFO"
+  file: "/var/log/pipeline/prod.log"
+  max_size_mb: 500
+  backup_count: 30
+  logstash_host: "logstash.prod.example.com"
+  logstash_port: 5044
+
+# Feature Flags
+features:
+  enable_data_validation: true
+  enable_anomaly_detection: true
+  enable_telemetry: true
+  enable_backup: true
+  enable_audit_logging: true
+
+# Alerting
+alerting:
+  enabled: true
+  slack_webhook: "${SLACK_WEBHOOK_URL}"  # From Vault
+  pagerduty_integration_key: "${PAGERDUTY_KEY}"  # From Vault
+  email_notifications: "data-ops@example.com"
+  alert_thresholds:
+    data_drop: 1.0  # 1% data drop
+    processing_time: 300  # 5 minutes
+    error_rate: 0.5  # 0.5% errors

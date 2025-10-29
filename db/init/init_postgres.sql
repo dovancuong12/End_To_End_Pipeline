@@ -1,1 +1,2 @@
--- TODO: implement SQL schema creation here
+-- This file contains the script to initialize the PostgreSQL database
+-- What to do: SQL script to create the schema and necessary tables in PostgreSQL
