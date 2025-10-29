@@ -1,0 +1,2 @@
+# MINIO BUCKET STRUCTURE
+# Define bucket structure và lifecycle policies

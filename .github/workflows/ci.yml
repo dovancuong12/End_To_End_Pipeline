@@ -1,0 +1,12 @@
+name: CI Pipeline
+#1. Trigger on push and pull requests
+#2. Setup Python environment
+#3. Install dependencies
+#4. Run linters (flake8, black, mypy)
+#5. Run unit tests with pytest
+#6. Check code coverage (>80%)
+#7. Validate Airflow DAGs (airflow dags test)
+#8. Validate Great Expectations config
+#9. Check Docker Compose syntax
+#10. Fail if there is an error
+# 11. Send notification to Telegram on failure
