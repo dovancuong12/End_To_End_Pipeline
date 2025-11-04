@@ -24,12 +24,12 @@ COPY requirements.txt /app/requirements.txt
 # Install Python dependencies
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy project
-COPY . /app/
-
 # Create non-root user
 RUN adduser --disabled-password --gecos '' appuser
-RUN chown -R appuser:appuser /app
+
+# Copy project with proper ownership
+COPY --chown=appuser:appuser . /app/
+
 USER appuser
 
 # Expose port (adjust as needed based on your application)
