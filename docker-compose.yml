@@ -115,15 +115,17 @@ services:
 
   # Spark Master
   spark-master:
-    image: bitnami/spark:latest
+    image: apache/spark:3.3.1
     container_name: e2e_pipeline_spark_master
+    command: 
+      - "/opt/spark/bin/spark-class"
+      - "org.apache.spark.deploy.master.Master"
+      - "-h"
+      - "spark-master"
     environment:
-      - SPARK_MODE=master
-      - SPARK_RPC_AUTHENTICATION_ENABLED=no
-      - SPARK_RPC_ENCRYPTION_ENABLED=no
-      - SPARK_LOCAL_STORAGE_ENCRYPTION_ENABLED=no
-      - SPARK_SSL_ENABLED=no
       - SPARK_MASTER_HOST=spark-master
+      - SPARK_MASTER_PORT=7077
+      - SPARK_MASTER_WEBUI_PORT=8080
     ports:
       - "7077:7077"
       - "8081:8080"
@@ -136,19 +138,18 @@ services:
 
   # Spark Worker
   spark-worker:
-    image: bitnami/spark:latest
+    image: apache/spark:3.3.1
     container_name: e2e_pipeline_spark_worker
-    environment:
-      - SPARK_MODE=worker
-      - SPARK_MASTER_URL=spark://spark-master:7077
-      - SPARK_WORKER_MEMORY=2g
-      - SPARK_WORKER_CORES=2
-      - SPARK_RPC_AUTHENTICATION_ENABLED=no
-      - SPARK_RPC_ENCRYPTION_ENABLED=no
-      - SPARK_LOCAL_STORAGE_ENCRYPTION_ENABLED=no
-      - SPARK_SSL_ENABLED=no
     depends_on:
       - spark-master
+    command: 
+      - "/opt/spark/bin/spark-class"
+      - "org.apache.spark.deploy.worker.Worker"
+      - "spark://spark-master:7077"
+    environment:
+      - SPARK_WORKER_MEMORY=2g
+      - SPARK_WORKER_CORES=2
+      - SPARK_WORKER_WEBUI_PORT=8081
     networks:
       - e2e_pipeline_network
     volumes:
@@ -182,6 +183,11 @@ services:
       - ./governance/great_expectations:/app/governance/great_expectations
     networks:
       - e2e_pipeline_network
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:8000/docs || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   # Great Expectations Data Quality Service
   great-expectations:
