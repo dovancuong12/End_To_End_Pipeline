@@ -1,5 +1,7 @@
 # CSV data ingestion module
 import pandas as pd
+from pathlib import Path
+from typing import Any, Dict
 from data_pipeline.ingestion.base_ingestor import BaseIngestor
 
 class CSVIngestor(BaseIngestor):
@@ -7,65 +9,63 @@ class CSVIngestor(BaseIngestor):
     Ingestor for CSV data source.
     - Reads data from CSV file path in config
     - Normalizes column names
-    - Returns metadata and DataFrame
+    - Returns metadata for DAG processing
     """
 
-    def extract(self):
+    def extract(self) -> Dict[str, Any]:
         """
-        Extract data from CSV source and return metadata about the data.
+        Extract data from CSV source and return metadata.
         
         Returns:
             dict: A dictionary containing:
-                - path: Path of the source CSV file
-                - rows: Number of rows in the CSV file
-                - columns: Number of columns in the CSV file
-                - schema_info: Dictionary with column information
-                - dataframe: The actual DataFrame containing the data
+                - path (str): Path to temporary parquet file
+                - rows (int): Number of rows in the CSV file
+                - columns (int): Number of columns in the CSV file
+                - schema_info (dict): Column info (dtype, nulls, uniques)
         """
-        # Get configuration parameters
         path = self.source_config.get("path")
+        if not path:
+            msg = f"'path' not specified in source configuration for {self.source_name}"
+            self.logger.error(msg)
+            raise ValueError(msg)
+
         encoding = self.source_config.get("encoding", "utf-8")
         delimiter = self.source_config.get("delimiter", ",")
-        
-        # Log the start of the reading process
-        self.logger.info(f"📥 [{self.source_name}] Reading CSV file: {path}")
-        
+
+        self.logger.info(f"[{self.source_name}] Reading CSV file: {path}")
+
         try:
-            # Read CSV file with specified encoding and delimiter
             df = pd.read_csv(path, encoding=encoding, delimiter=delimiter)
-            
-            # Normalize column names by stripping whitespace and converting to lowercase
             df.columns = [c.strip().lower() for c in df.columns]
-            
-            # Create schema information for each column
-            # This includes data type, non-null count, null count, and unique values count
-            schema_info = {}
-            for col in df.columns:
-                schema_info[col] = {
-                    'type': str(df[col].dtype),  # Data type of the column
-                    'non_null_count': int(df[col].count()),  # Number of non-null values
-                    'null_count': int(df[col].isnull().sum()),  # Number of null values
-                    'unique_values': int(df[col].nunique())  # Number of unique values
+
+            schema_info = {
+                col: {
+                    "type": str(df[col].dtype),
+                    "non_null_count": int(df[col].count()),
+                    "null_count": int(df[col].isnull().sum()),
+                    "unique_values": int(df[col].nunique())
                 }
-            
-            # Prepare the result dictionary with all required information
-            result = {
-                'path': path,  # Source file path
-                'rows': len(df),  # Number of rows
-                'columns': len(df.columns),  # Number of columns
-                'schema_info': schema_info,  # Schema information
-                'dataframe': df  # The actual DataFrame for further processing
+                for col in df.columns
             }
-            
-            # Log successful extraction with row and column counts
+
+            # Save temporary file for downstream DAGs
+            tmp_path = Path("/tmp") / f"{self.source_name}.parquet"
+            df.to_parquet(tmp_path, index=False)
+
+            result = {
+                "path": str(tmp_path),
+                "rows": len(df),
+                "columns": len(df.columns),
+                "schema_info": schema_info
+            }
+
             self.logger.info(
-                f"✅ [{self.source_name}] Extracted {result['rows']} rows, {result['columns']} columns from {path}"
+                f"[{self.source_name}] Extracted {result['rows']} rows, "
+                f"{result['columns']} cols -> saved to {tmp_path}"
             )
-            
-            # Return the result dictionary
+
             return result
-        
-        except Exception as e:
-            # Log the exception with traceback and re-raise
-            self.logger.exception(f"❌ [{self.source_name}] Failed to read CSV: {e}")
+
+        except (FileNotFoundError, pd.errors.ParserError) as e:
+            self.logger.exception(f"[{self.source_name}] Failed to read CSV: {e}")
             raise
