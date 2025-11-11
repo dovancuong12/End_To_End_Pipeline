@@ -1,24 +1,18 @@
-from pathlib import Path
 import logging
-import logging.config
+from loguru import logger
 import sys
 
-def setup_logging():
-    """Setup logging configuration."""
-    logging_config_path = Path(__file__).parent.parent / "logging.ini"
-    
-    if logging_config_path.exists():
-        logging.config.fileConfig(str(logging_config_path), disable_existing_loggers=False)
-    else:
-        logging.basicConfig(
-            level=logging.INFO,
-            format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-            handlers=[logging.StreamHandler(sys.stdout)]
-        )
-    
-    # Disable noisy third-party loggers
-    logging.getLogger("urllib3").setLevel(logging.WARNING)
-    logging.getLogger("watchfiles").setLevel(logging.ERROR)
-    logging.getLogger("uvicorn.access").setLevel(logging.WARNING)
+def setup_logging(log_file: str = "logs/app.log"):
+    """Set up global logging configuration — gọi một lần ở entry point."""
+    # Remove default handlers to avoid duplication
+    logger.remove()
+    # Log ra console
+    logger.add(sys.stdout, level="INFO", enqueue=True, colorize=True,
+               format="<green>{time:YYYY-MM-DD HH:mm:ss}</green> | <level>{message}</level>")
+    # Log ra file
+    logger.add(log_file, rotation="10 MB", retention="7 days", enqueue=True)
+    logger.info("✅ Logging configured successfully")
 
-    return logging.getLogger()
+def get_logger(name: str = None):
+    """Return logger instance without reconfiguring."""
+    return logger.bind(module=name)
