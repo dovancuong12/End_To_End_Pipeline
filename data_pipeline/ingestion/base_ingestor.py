@@ -6,16 +6,7 @@ class BaseIngestor(ABC):
     """Abstract base class for all data ingestors."""
 
     def __init__(self, config: dict, source_name: str):
-        """
-        Initialize the BaseIngestor with configuration and source name.
-        
-        Args:
-            config (dict): Configuration dictionary containing database connection and source settings
-            source_name (str): Name of the data source
-        """
-        # Store the full configuration
         self.config = config
-        # Store the source name for identification and logging
         self.source_name = source_name
         self.source_config = config.get("sources", {}).get(source_name, {})
 
