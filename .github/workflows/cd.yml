@@ -1,9 +1,0 @@
-name: CD Pipeline
-# 1. Trigger when CI passes and has new tag
-# 2. Build Docker images
-# 3. Run integration tests
-# 4. Push images to registry
-# 5. Deploy to staging environment
-# 6. Run smoke tests
-# 7. Deploy to production (manual approval)
-# 8. Send success notification to Telegram
