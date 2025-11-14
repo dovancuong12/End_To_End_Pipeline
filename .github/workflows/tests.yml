@@ -1,7 +1,0 @@
-name: Test Suite
-# 1. Run unit tests
-# 2. Run integration tests
-# 3. Run E2E tests
-# 4. Generate coverage report
-# 5. Upload coverage to Codecov
-# 6. Matrix testing với multiple Python versions
