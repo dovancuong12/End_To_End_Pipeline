@@ -8,6 +8,7 @@ import logging
 # Import ingestion modules
 from common.logger.logger import setup_logging
 from data_pipeline.ingestion.factory import IngestorFactory
+from common.storage.minio_client import get_minio_client
 
 # Configure logging once globally for DAG
 setup_logging()
@@ -33,6 +34,10 @@ with DAG(
     description="Batch ingestion pipeline for CSV, YAML, XML sources",
 ) as dag:
 
+    # --- DAG tasks ---
+    # --------------------
+    # 1. LOAD CONFIG
+    # --------------------
     @task()
     def load_config() -> dict:
         """Load the YAML configuration file."""
@@ -41,6 +46,9 @@ with DAG(
         logging.info(f"✅ Loaded config with {len(config['sources'])} sources")
         return config
 
+    # --------------------
+    # 2. RUN INGESTION
+    # --------------------
     @task()
     def run_ingestion(config: dict, source_name: str):
         """Run ingestion for one source based on type."""
@@ -62,7 +70,36 @@ with DAG(
         return result
 
     # --- DAG execution graph ---
+    # --------------------
+    # 3. UPLOAD TO MINIO
+    # --------------------
     config = load_config()
+    minio_client = get_minio_client()
+    @task()
+    def upload_to_minio(result: dict, bucket: str = "raw"):
+        file_path = result["path"]
+        source_name = Path(file_path).stem
+        today = datetime.utcnow()
+
+        object_key = (
+            f"{source_name}/{today.year}/{today.month:02d}/{today.day:02d}/"
+            f"{source_name}.parquet"
+        )
+
+        client = minio_client
+
+        if not client.bucket_exists(bucket):
+            client.make_bucket(bucket)
+
+        client.fput_object(bucket, object_key, file_path)
+
+        logging.info(f"📤 Uploaded to MinIO: s3://{bucket}/{object_key}")
+
+        return {
+            "bucket": bucket,
+            "key": object_key,
+            "local_path": file_path,
+        }
 
     # Dynamically create ingestion tasks for each source in config
     from airflow.models.baseoperator import chain
@@ -74,3 +111,15 @@ with DAG(
     # Define linear execution or parallel
     chain(config, *ingestion_tasks)
 
+    # --------------------
+    # BUILD DAG GRAPH
+    # --------------------
+    config = load_config()
+    config_data = yaml.safe_load(open(CONFIG_PATH, "r"))
+
+    for src_name in config_data["sources"].keys():
+        ingest = run_ingestion.override(task_id=f"ingest_{src_name}")(config, src_name)
+        upload = upload_to_minio.override(task_id=f"upload_{src_name}")(ingest)
+
+        # You can optionally chain load_config >> ingest >> upload
+        config >> ingest >> upload

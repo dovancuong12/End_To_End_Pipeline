@@ -2,6 +2,16 @@ from pydantic import Field
 from pydantic_settings import BaseSettings
 from typing import Dict, List, Any, Optional
 
+class MinIOConfigs(BaseSettings):
+    endpoint: str = Field("minio:9000", alias="MINIO_ENDPOINT")
+    access_key: str = Field("minioadmin", alias="MINIO_ROOT_USER")
+    secret_key: str = Field("minioadmin", alias="MINIO_ROOT_PASSWORD")
+    secure: bool = Field(False, alias="MINIO_SECURE")
+
+    class Config:
+        env_file = ".env"
+        env_file_encoding = "utf-8"
+        extra = "ignore"
 
 class PostgresConfigs(BaseSettings):
     host: str = Field("localhost", alias="POSTGRES_HOST")
@@ -28,12 +38,14 @@ class AppConfigs(BaseSettings):
 
 class Configs(BaseSettings):
     postgres: PostgresConfigs = PostgresConfigs()
+    minio: MinIOConfigs = MinIOConfigs()
+    app: AppConfigs = AppConfigs()
     
     # Add missing fields used in main.py
     host: str = Field("0.0.0.0", alias="HOST")
     port: int = Field(8000, alias="PORT")
     max_workers: int = Field(10, alias="MAX_WORKERS")
-    service_name: str = Field("oasm-assistant", alias="SERVICE_NAME")
+    service_name: str = Field("entoend-pipeline", alias="SERVICE_NAME")
     version: str = Field("1.0.0", alias="VERSION")
     
     # Add missing fields used in domain_classifier.py
